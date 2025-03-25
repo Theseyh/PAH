@@ -7,7 +7,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
-
+//gcc -o 1 -lm 1.c && ./1 lena512.bmp lena512_filtered.bmp
 // Gaussian function
 double gaussian(double x, double sigma) {
     return exp(-(x * x) / (2.0 * sigma * sigma));
@@ -105,18 +105,17 @@ int main(int argc, char *argv[]) {
         stbi_image_free(image);
         return 1;
     }
+    
+    // Mesurer le temps avant l'exécution du filtre
+    clock_t start_time = clock();
 
-    // Start measuring time
-    clock_t start = clock();
-
-    // Apply the bilateral filter
+    // Appliquer le filtre bilatéral
     bilateral_filter(image, filtered_image, width, height, channels, 5, 75.0, 75.0);
 
-    // Stop measuring time
-    clock_t end = clock();
-    double time_taken = (double)(end - start) / CLOCKS_PER_SEC;
-
-    printf("Bilateral filtering took %f seconds.\n", time_taken);
+    // Mesurer le temps après l'exécution du filtre
+    clock_t end_time = clock();
+    double time_taken = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;  // Temps en secondes
+    printf("%.2f\n", time_taken);
 
     // Save the output image
     if (!stbi_write_png(argv[2], width, height, channels, filtered_image, width * channels)) {
@@ -131,5 +130,7 @@ int main(int argc, char *argv[]) {
     free(filtered_image);
 
     printf("Bilateral filtering complete. Output saved as %s\n", argv[2]);
+    printf("Time taken for bilateral filtering: %f seconds\n", time_taken);
+
     return 0;
 }
