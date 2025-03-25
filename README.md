@@ -98,8 +98,9 @@ Dans cette approche, deux noyaux CUDA distincts sont utilisés : un pour calcule
     cudaDeviceSynchronize();
 ```
 Dans cette approche, deux noyaux sont lancés : l’un calcule les poids spatiaux (calculate_spatial_weights), puis l’autre applique le filtre sur l'image (bilateral_filter_kernel).  
+Le gain obtenu par le calcul du noyau sur le GPU est très faible en raison de la faible dimension du noyau (5x5) 
 2. Utilisation d'un seul noyau  
-Une autre solution consiste à combiner les deux tâches dans un seul noyau, où le calcul des poids spatiaux et l'application du filtre sont effectués simultanément. Cette approche recalcul donc plusieurs fois certains résultats:  
+Une autre solution consiste à combiner les deux tâches dans un seul noyau, où le calcul des poids spatiaux et l'application du filtre sont effectués simultanément. Cette approche recalcul donc plusieurs fois les variables de la matrice du noyau.
 **Noyau unique pour calculer les poids et appliquer le filtre** :
 ```cpp
 dim3 blockSize(block_size, block_size); // Taille des blocs, avec une limite de 1024 threads par bloc

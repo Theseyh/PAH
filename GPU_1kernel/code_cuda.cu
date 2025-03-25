@@ -42,7 +42,7 @@ __global__ void bilateral_filter_kernel(unsigned char *src, unsigned char *dst, 
 
                 unsigned char *neighbor_pixel = src + (ny * width + nx) * channels;
 
-                // Calcul de spatial_weights, le calcul est répété pour des pixels, autre solution est de calculer avant dans un autre kernel puis de le recalculer ici
+                // Calcul de spatial_weights, le calcul est répété pour des pixels, autre solution est de calculer avant dans un autre kernel puis de l'utiliser ici
                 double spatial_weight = gaussian(sqrtf(i * i + j * j), sigma_space);
 
                 for (int c = 0; c < channels; c++) {
