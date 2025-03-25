@@ -25,10 +25,12 @@ __global__ void bilateral_filter_kernel(unsigned char *src, unsigned char *dst, 
 
         // Precompute spatial Gaussian weights for the current pixel
         double spatial_weights[25]; // Maximum window size of 5x5
+        
         int count = 0;
         for (int i = -radius; i <= radius; i++) {
             for (int j = -radius; j <= radius; j++) {
-                spatial_weights[count++] = gaussian(sqrt(i * i + j * j), sigma_space);
+                spatial_weights[count++] = gaussian(sqrtf(i * i + j * j), sigma_space);
+
             }
         }
 
@@ -49,6 +51,7 @@ __global__ void bilateral_filter_kernel(unsigned char *src, unsigned char *dst, 
                     // Compute range weight
                     double range_weight = gaussian(abs(neighbor_pixel[c] - center_pixel[c]), sigma_color);
                     double weight = spatial_weights[(i + radius) * d + (j + radius)] * range_weight;
+                    
 
                     // Accumulate weighted sum
                     filtered_value[c] += neighbor_pixel[c] * weight;
