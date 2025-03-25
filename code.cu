@@ -6,10 +6,15 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+#include <chrono>
+
+
 
 __device__ double gaussian(double x, double sigma) {
     return exp(-(x * x) / (2.0 * sigma * sigma));
 }
+
+
 
 __global__ void bilateral_filter_kernel(unsigned char *src, unsigned char *dst, int width, int height, int channels, int d, double sigma_color, double sigma_space) {
     int radius = d / 2;
@@ -69,6 +74,8 @@ __global__ void bilateral_filter_kernel(unsigned char *src, unsigned char *dst, 
     }
 }
 
+
+
 // Main function
 int main(int argc, char *argv[]) {
     if (argc < 3) {
@@ -110,8 +117,19 @@ int main(int argc, char *argv[]) {
     dim3 block_size(16, 16);
     dim3 grid_size((width + block_size.x - 1) / block_size.x, (height + block_size.y - 1) / block_size.y);
 
-    // Apply bilateral filter kernel
+
+
+    // Mesure du temps avant l'application du filtre
+    auto start = std::chrono::high_resolution_clock::now();
+
+
     bilateral_filter_kernel<<<grid_size, block_size>>>(d_src, d_dst, width, height, channels, 5, 75.0, 75.0);
+       
+    // Mesure du temps après l'application du filtre
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = end - start;
+    printf("Bilateral filtering took %.2f seconds\n", duration.count());
+    // Apply bilateral filter kernel
 
     cudaDeviceSynchronize();
 
