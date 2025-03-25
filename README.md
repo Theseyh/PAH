@@ -71,11 +71,11 @@ Les boucles suivantes sont parallélisées :
         }
     }
   ```
-**Solutions de parallélisation**
+**Solutions de parallélisation**  
 Deux approches ont été utilisées pour paralléliser le calcul avec CUDA :
-
-1. Utilisation de deux noyaux distincts
-Dans cette approche, deux noyaux CUDA distincts sont utilisés : un pour calculer les poids spatiaux et un autre pour appliquer le filtre sur l'image. Voici l'exemple de code :
+  
+1. Utilisation de deux noyaux distincts  
+Dans cette approche, deux noyaux CUDA distincts sont utilisés : un pour calculer les poids spatiaux et un autre pour appliquer le filtre sur l'image. Voici l'exemple de code :  
 
 **Noyau pour calculer les poids spatiaux** :
 ```cpp
@@ -84,8 +84,8 @@ Dans cette approche, deux noyaux CUDA distincts sont utilisés : un pour calcule
 
     calculate_spatial_weights<<<gridSize, blockSize2D>>>(d_spatial_weights, d, sigma_space);
     cudaDeviceSynchronize();
-```
-**Noyau pour appliquer le filtre bilatéral :**
+```  
+**Noyau pour appliquer le filtre bilatéral :**  
 ```cpp
     unsigned char *d_src, *d_dst;
     cudaMalloc(&d_src, width * height * channels * sizeof(unsigned char));
@@ -97,9 +97,9 @@ Dans cette approche, deux noyaux CUDA distincts sont utilisés : un pour calcule
     bilateral_filter_kernel<<<gridSize, blockSize2D>>>(d_src, d_dst, width, height, channels, d, sigma_color, d_spatial_weights);
     cudaDeviceSynchronize();
 ```
-Dans cette approche, deux noyaux sont lancés : l’un calcule les poids spatiaux (calculate_spatial_weights), puis l’autre applique le filtre sur l'image (bilateral_filter_kernel).
-2. Utilisation d'un seul noyau
-Une autre solution consiste à combiner les deux tâches dans un seul noyau, où le calcul des poids spatiaux et l'application du filtre sont effectués simultanément. Cette approche recalcul donc plusieurs fois certains résultats:
+Dans cette approche, deux noyaux sont lancés : l’un calcule les poids spatiaux (calculate_spatial_weights), puis l’autre applique le filtre sur l'image (bilateral_filter_kernel).  
+2. Utilisation d'un seul noyau  
+Une autre solution consiste à combiner les deux tâches dans un seul noyau, où le calcul des poids spatiaux et l'application du filtre sont effectués simultanément. Cette approche recalcul donc plusieurs fois certains résultats:  
 **Noyau unique pour calculer les poids et appliquer le filtre** :
 ```cpp
 dim3 blockSize(block_size, block_size); // Taille des blocs, avec une limite de 1024 threads par bloc
