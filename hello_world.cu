@@ -4,7 +4,8 @@
 //./hello_world
 
 // CUDA kernel function
-__global__ void kernel() { 
+__global__ void kernel() {
+    printf("Hello from the GPU!\n");
 }
 
 int main(void) {
