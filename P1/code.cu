@@ -16,6 +16,7 @@ __global__ void bilateral_filter_kernel(unsigned char *src, unsigned char *dst, 
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
+    /*on fait les conditions aux limites*/
     if (x >= radius && x < width - radius && y >= radius && y < height - radius) {
         double weight_sum[3] = {0.0, 0.0, 0.0};
         double filtered_value[3] = {0.0, 0.0, 0.0};
