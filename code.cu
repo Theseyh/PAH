@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
-#include <chrono>
 
 
 
@@ -119,17 +118,29 @@ int main(int argc, char *argv[]) {
 
 
 
-    // Mesure du temps avant l'application du filtre
-    auto start = std::chrono::high_resolution_clock::now();
+    // Création des événements
+    cudaEvent_t start, stop;
+    float elapsedTime;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
 
+    // Démarrer le timer
+    cudaEventRecord(start, 0);
 
+    // Lancer le kernel
     bilateral_filter_kernel<<<grid_size, block_size>>>(d_src, d_dst, width, height, channels, 5, 75.0, 75.0);
-       
-    // Mesure du temps après l'application du filtre
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end - start;
-    printf("Bilateral filtering took %.2f seconds\n", duration.count());
-    // Apply bilateral filter kernel
+
+    // Synchronisation et arrêt du timer
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&elapsedTime, start, stop);
+
+    // Afficher le temps d'exécution
+    printf("Temps d'exécution du kernel : %f ms\n", elapsedTime);
+
+    // Nettoyage des événements
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
 
     cudaDeviceSynchronize();
 
