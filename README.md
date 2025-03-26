@@ -130,8 +130,6 @@ Une certaine variabilité a été observé dans les résultats obtenus par le GP
 Bien que l'implémentation CUDA soit déjà optimisée, plusieurs pistes d'amélioration peuvent être explorées :  
 
 - **Kernel pour les poids de l'image** : Étant donné que le voisinage est une matrice de taille 5x5, son impact sur la parallélisation pourrait être limité. Cette optimisation pourrait s'avérer contre-productive.  
-- **Optimisation des boucles** : Accroître la parallélisation des calculs internes afin de mieux répartir la charge de travail entre les threads.  
-- **Utilisation de textures CUDA** : Exploiter la mémoire texture pour accélérer l'accès aux données et améliorer l'efficacité du cache.  
 - **Ajustement des tailles de blocs** : Tester différentes configurations pour optimiser l'occupation des multiprocesseurs et maximiser les performances.  
 
 Ces optimisations pourraient encore améliorer les performances du filtre bilatéral en CUDA en réduisant le temps de calcul global.
