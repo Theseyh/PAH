@@ -47,7 +47,7 @@ Le portage du code sur CUDA implique plusieurs défis techniques, notamment :
 
 Dans cette application, l'objectif est de paralléliser le calcul d'un filtre bilatéral. Pour ce faire, deux parties principales du code sont parallélisées :
 
-1. **Le calcul des poids spatiaux (`spatial_weights`)** : Le noyau spatial est une matrice carrée de taille `d x d` qui représente les poids de la fenêtre pour chaque pixel. Ces poids dépendent de la distance entre le pixel central et ses voisins.
+1. **Le calcul des poids spatiaux (`spatial_weights`)** : Le noyau spatial est une matrice carrée de taille `d x d` qui représente les poids de la fenêtre pour chaque pixel (dans le code cette matrice est représentée sous la forme d'un vecteur). Ces poids dépendent de la distance entre le pixel central et ses voisins.
 
 2. **L'application du filtre bilatéral à l'image** : Pour chaque pixel de l'image, un filtre est appliqué en tenant compte de la similarité de couleur et de la distance spatiale des pixels voisins.
 
@@ -72,7 +72,7 @@ Les boucles suivantes sont parallélisées :
     }
   ```
 **Solutions de parallélisation**  
-Deux approches ont été utilisées pour paralléliser le calcul avec CUDA :
+Deux approches peuvent être envisager pour paralléliser le calcul avec CUDA :
   
 1. Utilisation de deux noyaux distincts  
 Dans cette approche, deux noyaux CUDA distincts sont utilisés : un pour calculer les poids spatiaux et un autre pour appliquer le filtre sur l'image. Voici l'exemple de code :  
@@ -98,9 +98,9 @@ Dans cette approche, deux noyaux CUDA distincts sont utilisés : un pour calcule
     cudaDeviceSynchronize();
 ```
 Dans cette approche, deux noyaux sont lancés : l’un calcule les poids spatiaux (calculate_spatial_weights), puis l’autre applique le filtre sur l'image (bilateral_filter_kernel).  
-Le gain obtenu par le calcul du noyau sur le GPU est très faible en raison de la faible dimension du noyau (5x5) 
+Le gain obtenu par le calcul du noyau sur le GPU est très faible et pourrait être nuisible en raison de la faible dimension du noyau (5x5) 
 2. Utilisation d'un seul noyau  
-Une autre solution consiste à combiner les deux tâches dans un seul noyau, où le calcul des poids spatiaux et l'application du filtre sont effectués simultanément. Cette approche recalcul donc plusieurs fois les variables de la matrice du noyau.
+Une autre solution consiste à utilser le CUDA sur toute la fonction bilateral_filter, répétant pour chaque threads le calcul du noyau.  
 **Noyau unique pour calculer les poids et appliquer le filtre** :
 ```cpp
 dim3 blockSize(block_size, block_size); // Taille des blocs, avec une limite de 1024 threads par bloc
@@ -111,23 +111,20 @@ cudaDeviceSynchronize();
 ```
 Dans cette approche, un seul noyau est utilisé pour effectuer à la fois le calcul des poids spatiaux et l'application du filtre bilatéral.
 
-## 5. Analyse des performances
+**Limite de la parallélisation**
+La taille du noyau est limité par le nombre de threads que l'on peut utiliser.  
+Sur un GPU A100 du finisterrae, le nombre de threads maximum est de 1024, ce qui signifie que la taille maximale d'un bloc 2d est de 32x32.
+## 5. Analyse des performances  
 
-Une comparaison des performances a été réalisée entre l'implémentation séquentielle en C et l'implémentation CUDA.
+Nous avons comparé les performances de l'implémentation séquentielle en C et de l'implémentation parallèle avec CUDA utilisant 2 kernels.
 
-Implémentation
+| Implémentation   | Temps d'exécution (s) |
+|-----------------|----------------------|
+| **C Séquentiel** | **0.42**             |
+| **CUDA**        | **0.16**             |
 
-Temps d'exécution (s)
-
-C Séquentiel
-
-0.44
-
-CUDA
-
-0.22
-
-Le code CUDA est donc **deux fois plus rapide** que l'implémentation séquentielle.
+L’implémentation CUDA **divise le temps d'exécution par 2,6** par rapport à l’exécution séquentielle.
+Une certaine variabilité a été observé dans les résultats obtenus par le GPU, elle ne semble pas être lié à la taille du bloc. Le temps pourrait être due en partie à l'utilisation de la librairie chronos sur code_cuda.cu
 
 ## 6. Améliorations possibles
 

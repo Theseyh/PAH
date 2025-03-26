@@ -39,11 +39,11 @@ __global__ void bilateral_filter_kernel(unsigned char *src, unsigned char *dst, 
         double filtered_value[3] = {0.0, 0.0, 0.0};
 
         unsigned char *center_pixel = src + (y * width + x) * channels;
-
+        // regarder les voisins
         for (int i = 0; i < d; i++) {
             for (int j = 0; j < d; j++) {
-                int nx = x + j - radius;
-                int ny = y + i - radius;
+                int nx = x + j - radius; // calcul d'un voisin dans la fenêtre
+                int ny = y + i - radius; // calcul d'un voisin dans la fenêtre
 
                 if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
                     continue;
@@ -64,7 +64,7 @@ __global__ void bilateral_filter_kernel(unsigned char *src, unsigned char *dst, 
 
         unsigned char *output_pixel = dst + (y * width + x) * channels;
         for (int c = 0; c < channels; c++) {
-            output_pixel[c] = (unsigned char)(filtered_value[c] / (weight_sum[c] + 1e-6));
+            output_pixel[c] = (unsigned char)(filtered_value[c] / (weight_sum[c] + 1e-6)); // Appliquer le floutage
         }
     }
 }
@@ -92,7 +92,7 @@ void bilateral_filter(unsigned char *src, unsigned char *dst, int width, int hei
     cudaMalloc(&d_dst, width * height * channels * sizeof(unsigned char));
     cudaMemcpy(d_src, src, width * height * channels * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
-    gridSize = dim3((width + blockSize2D.x - 1) / blockSize2D.x, (height + blockSize2D.y - 1) / blockSize2D.y);
+    gridSize = dim3((width + blockSize2D.x - 1) / blockSize2D.x, (height + blockSize2D.y - 1) / blockSize2D.y); // crée des blocs qui dépasse de l'image si la taille n'est pas un multiple.
 
     bilateral_filter_kernel<<<gridSize, blockSize2D>>>(d_src, d_dst, width, height, channels, d, sigma_color, d_spatial_weights);
     cudaDeviceSynchronize();
@@ -150,8 +150,8 @@ int main(int argc, char *argv[]) {
     auto start = std::chrono::high_resolution_clock::now();
     bilateral_filter(image, filtered_image, width, height, channels, 5, 75.0, 75.0, block_size);
     auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end - start;
-    printf("%.2f\n", duration.count());
+    std::chrono::duration<double, std::milli> duration = end - start;
+    printf("Temps total (CPU + GPU) : %.2f ms\n", duration.count());
 
     if (!stbi_write_png(argv[2], width, height, channels, filtered_image, width * channels)) {
         printf("Error saving the image!\n");

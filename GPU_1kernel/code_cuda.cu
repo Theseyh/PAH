@@ -9,28 +9,38 @@
 #include <cuda_runtime.h>
 #include <chrono>
 
-// Fonction Gaussienne sur GPU
+
 __device__ double gaussian(double x, double sigma) {
     return exp(-(x * x) / (2.0 * sigma * sigma));
 }
 
-// CUDA kernel optimisé (calcul des poids spatiaux et application du filtre)
-__global__ void bilateral_filter_kernel(unsigned char *src, unsigned char *dst, int width, int height, int channels, int d, double sigma_color, double sigma_space) {
-    int x = blockIdx.x * blockDim.x + threadIdx.x; // Récupération de l'abscisse (x) du pixel dans l'image 2D
-    int y = blockIdx.y * blockDim.y + threadIdx.y; // Récupération de l'ordonnée (y) du pixel dans l'image 2D
 
-    // Eviter les bords de l'image
-    /*
-        for (int y = radius; y < height - radius; y++) {
-        for (int x = radius; x < width - radius; x++) {
-    */
+
+__global__ void bilateral_filter_kernel(unsigned char *src, unsigned char *dst, int width, int height, int channels, int d, double sigma_color, double sigma_space) {
     int radius = d / 2;
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    /*on fait les conditions aux limites*/
     if (x >= radius && x < width - radius && y >= radius && y < height - radius) {
         double weight_sum[3] = {0.0, 0.0, 0.0};
         double filtered_value[3] = {0.0, 0.0, 0.0};
 
+        // Get center pixel pointer
         unsigned char *center_pixel = src + (y * width + x) * channels;
 
+        // Precompute spatial Gaussian weights for the current pixel
+        double spatial_weights[25]; // Maximum window size of 5x5
+        
+        int count = 0;
+        for (int i = -radius; i <= radius; i++) {
+            for (int j = -radius; j <= radius; j++) {
+                spatial_weights[count++] = gaussian(sqrtf(i * i + j * j), sigma_space);
+
+            }
+        }
+
+        // Iterate over local window
         for (int i = -radius; i <= radius; i++) {
             for (int j = -radius; j <= radius; j++) {
                 int nx = x + j;
@@ -40,21 +50,23 @@ __global__ void bilateral_filter_kernel(unsigned char *src, unsigned char *dst, 
                     continue;
                 }
 
+                // Get neighbor pixel pointer
                 unsigned char *neighbor_pixel = src + (ny * width + nx) * channels;
 
-                // Calcul de spatial_weights, le calcul est répété pour des pixels, autre solution est de calculer avant dans un autre kernel puis de l'utiliser ici
-                double spatial_weight = gaussian(sqrtf(i * i + j * j), sigma_space);
-
                 for (int c = 0; c < channels; c++) {
+                    // Compute range weight
                     double range_weight = gaussian(abs(neighbor_pixel[c] - center_pixel[c]), sigma_color);
-                    double weight = spatial_weight * range_weight;
+                    double weight = spatial_weights[(i + radius) * d + (j + radius)] * range_weight;
+                    
 
+                    // Accumulate weighted sum
                     filtered_value[c] += neighbor_pixel[c] * weight;
                     weight_sum[c] += weight;
                 }
             }
         }
 
+        // Normalize and store result
         unsigned char *output_pixel = dst + (y * width + x) * channels;
         for (int c = 0; c < channels; c++) {
             output_pixel[c] = (unsigned char)(filtered_value[c] / (weight_sum[c] + 1e-6)); // Avoid division by zero
@@ -63,47 +75,12 @@ __global__ void bilateral_filter_kernel(unsigned char *src, unsigned char *dst, 
 }
 
 
-// Fonction pour appliquer le filtre bilatéral avec CUDA
-void bilateral_filter(unsigned char *src, unsigned char *h_dst, int width, int height, int channels, int d, double sigma_color, double sigma_space, int block_size) {
-    unsigned char *d_src, *d_dst;
-    cudaMalloc(&d_src, width * height * channels * sizeof(unsigned char));
-    cudaMalloc(&d_dst, width * height * channels * sizeof(unsigned char));
-    cudaMemcpy(d_src, src, width * height * channels * sizeof(unsigned char), cudaMemcpyHostToDevice);
-
-    dim3 blockSize(block_size, block_size); // taille des blocs, 32 max car l'on peut exécuter que 1024 threads par blocs
-    dim3 gridSize((width + blockSize.x - 1) / blockSize.x, (height + blockSize.y - 1) / blockSize.y); // taille de la grille, blockSize*gridSize = 512 pour l'image 
-    //printf("Block Size: (%d, %d)\n", blockSize.x, blockSize.y);
-    //printf("Grid Size: (%d, %d)\n", gridSize.x, gridSize.y);
-    //int maxThreadsPerBlock;
-    //cudaDeviceGetAttribute(&maxThreadsPerBlock, cudaDevAttrMaxThreadsPerBlock, 0);
-    //printf("Max Threads per block: %d\n", maxThreadsPerBlock);
-
-    bilateral_filter_kernel<<<gridSize, blockSize>>>(d_src, d_dst, width, height, channels, d, sigma_color, sigma_space);
-    // attente du noyau
-    cudaDeviceSynchronize();
-
-    cudaMemcpy(h_dst, d_dst, width * height * channels * sizeof(unsigned char), cudaMemcpyDeviceToHost);
-
-    cudaFree(d_src);
-    cudaFree(d_dst);
-}
-
 
 // Main function
 int main(int argc, char *argv[]) {
-    
     if (argc < 3) {
-        printf("Usage: %s <input_image> <output_image> [block_size]\n", argv[0]);
+        printf("Usage: %s <input_image> <output_image>\n", argv[0]);
         return 1;
-    }
-
-    int block_size = 16;
-    if (argc == 4) {
-        block_size = atoi(argv[3]);
-        if (block_size <= 0) {
-            printf("Invalid block size! Using default block size of 16.\n");
-            block_size = 16;
-        }
     }
 
     int width, height, channels;
@@ -113,12 +90,14 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // Ensure that image is not too small for bilateral filter (at least radius of d/2 around edges)
     if (width <= 5 || height <= 5) {
         printf("Image is too small for bilateral filter (at least 5x5 size needed).\n");
         stbi_image_free(image);
         return 1;
     }
 
+    // Allocate memory for output image
     unsigned char *filtered_image = (unsigned char *)malloc(width * height * channels);
     if (!filtered_image) {
         printf("Memory allocation for filtered image failed!\n");
@@ -126,21 +105,71 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    auto start = std::chrono::high_resolution_clock::now();
-    bilateral_filter(image, filtered_image, width, height, channels, 5, 75.0, 75.0, block_size);
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end - start;
-    printf("%.2f\n", duration.count());
+    unsigned char *d_src, *d_dst;
+    size_t img_size = width * height * channels * sizeof(unsigned char);
 
+    cudaMalloc((void **)&d_src, img_size);
+    cudaMalloc((void **)&d_dst, img_size);
+
+    cudaMemcpy(d_src, image, img_size, cudaMemcpyHostToDevice);
+
+    // Define block and grid sizes
+    dim3 block_size(16, 16);
+    dim3 grid_size((width + block_size.x - 1) / block_size.x, (height + block_size.y - 1) / block_size.y); //32x32
+
+    // Création des événements CUDA pour mesurer le temps d'exécution du kernel
+    cudaEvent_t start, stop;
+    float elapsedTime;
+
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    // Démarrer le timer global (mesure CPU + GPU)
+    auto start_cpu = std::chrono::high_resolution_clock::now();
+
+    // Démarrer le timer CUDA (uniquement pour le kernel)
+    cudaEventRecord(start, 0);
+
+    // Lancer le kernel
+    bilateral_filter_kernel<<<grid_size, block_size>>>(d_src, d_dst, width, height, channels, 5, 75.0, 75.0);
+
+    // Synchronisation et arrêt du timer CUDA
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&elapsedTime, start, stop);
+
+    // Arrêter le timer global (CPU + GPU)
+    auto end_cpu = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = end_cpu - start_cpu;
+
+    // Afficher les temps d'exécution
+    printf("Temps d'exécution du kernel : %.2f ms\n", elapsedTime);
+    printf("Temps total (CPU + GPU) : %.2f ms\n", duration.count());
+
+    // Nettoyage des événements
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+
+    cudaDeviceSynchronize();
+
+    cudaMemcpy(filtered_image, d_dst, img_size, cudaMemcpyDeviceToHost);
+
+    // Save the output image
     if (!stbi_write_png(argv[2], width, height, channels, filtered_image, width * channels)) {
         printf("Error saving the image!\n");
         free(filtered_image);
         stbi_image_free(image);
+        cudaFree(d_src);
+        cudaFree(d_dst);
         return 1;
     }
 
+    // Free memory
     stbi_image_free(image);
     free(filtered_image);
+    cudaFree(d_src);
+    cudaFree(d_dst);
+
     printf("Bilateral filtering complete. Output saved as %s\n", argv[2]);
     return 0;
 }
