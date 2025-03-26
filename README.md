@@ -9,9 +9,9 @@ Le filtrage bilatéral est une technique avancée de traitement d'image qui perm
 
 Les filtres classiques de lissage, bien qu'efficaces pour réduire le bruit, ont pour inconvénient d'altérer les contours et les détails fins des images. Le filtre bilatéral résout ce problème en prenant en compte non seulement la distance spatiale entre les pixels, mais aussi la différence d'intensité entre eux. Cette approche permet de préserver les bords tout en réduisant le bruit de l'image.
 
-## 4. Implémentation
+## 3. Implémentation
 
-### 4.1 Structure des fichiers
+### 3.1 Structure des fichiers
 
 -   `code.c` : Implémentation séquentielle du filtre bilatéral en C.
     
@@ -20,7 +20,7 @@ Les filtres classiques de lissage, bien qu'efficaces pour réduire le bruit, ont
 -   `lena_grey.bmp` : Image d'entrée en niveaux de gris utilisée pour le traitement.
     
 
-### 4.2 Implémentation séquentielle en C
+### 3.2 Implémentation séquentielle en C
 
 L'implémentation séquentielle consiste à :
 
@@ -33,7 +33,7 @@ L'implémentation séquentielle consiste à :
 -   Vérifier le bon fonctionnement sur une image bruitée.
     
 
-### 4.3 Portage vers CUDA
+### 3.3 Portage vers CUDA
 
 Le portage du code sur CUDA implique plusieurs défis techniques, notamment :
 
@@ -114,7 +114,7 @@ Dans cette approche, un seul noyau est utilisé pour effectuer à la fois le cal
 **Limite de la parallélisation**
 La taille du noyau est limité par le nombre de threads que l'on peut utiliser.  
 Sur un GPU A100 du finisterrae, le nombre de threads maximum est de 1024, ce qui signifie que la taille maximale d'un bloc 2d est de 32x32.
-## 5. Analyse des performances  
+## 4. Analyse des performances  
 
 Nous avons comparé les performances de l'implémentation séquentielle en C et de l'implémentation parallèle avec CUDA utilisant 2 kernels.
 
@@ -125,7 +125,7 @@ Nous avons comparé les performances de l'implémentation séquentielle en C et 
 
 L’implémentation CUDA **divise le temps d'exécution par 2,6** par rapport à l’exécution séquentielle.
 Une certaine variabilité a été observé dans les résultats obtenus par le GPU, elle ne semble pas être lié à la taille du bloc. Le temps pourrait être due en partie à l'utilisation de la librairie chronos sur code_cuda.cu
-### 6. Améliorations possibles  
+### 5. Améliorations possibles  
 
 Bien que l'implémentation CUDA soit déjà optimisée, plusieurs pistes d'amélioration peuvent être explorées :  
 
