@@ -1,4 +1,5 @@
 
+
 # Filtrage Bilatéral avec CUDA
 
 ## 1. Introduction
@@ -9,34 +10,20 @@ Le filtrage bilatéral est une technique avancée de traitement d'image qui perm
 
 Les filtres classiques de lissage, bien qu'efficaces pour réduire le bruit, ont pour inconvénient d'altérer les contours et les détails fins des images. Le filtre bilatéral résout ce problème en prenant en compte non seulement la distance spatiale entre les pixels, mais aussi la différence d'intensité entre eux. Cette approche permet de préserver les bords tout en réduisant le bruit de l'image.
 
-<<<<<<< HEAD
-## 3 Implémentation
-
-### 31 Structure des fichiers
-
--   `CPU` : Répertoire contenant l'implémentation CPU.
-
--   `GPU_1kernel` : Répertoire contenant l'implémentation GPU utilisant 1 kernel.
-
--   `GPU_2kernel` : Répertoire contenant l'implémentation CPU utilisant 2 kernels.
-=======
 ## 3. Implémentation
 
 ### 3.1 Structure des fichiers
->>>>>>> 14187c0b08ebc9f7a950f2a404845718d471d3f1
 
--   `code.c` : Implémentation séquentielle du filtre bilatéral en C.
+-   `CPU` : Répertoire contenant l'implémentation CPU en C.
     
--   `code_cuda.cu` : Implémentation parallèle en CUDA.
+-   `GPU_1kernel` : Répertoire contenant l'implémentation GPU utilisant 1 kernel en CUDA.
     
--   `lena_grey.bmp` : Image d'entrée en niveaux de gris utilisée pour le traitement.
+-   `GPU_2kernel` : Répertoire contenant l'implémentation GPU utilisant 2 kernel en CUDA.
+
+- `legacy` : Début de notre code en C pour manipuler l'image .bmp, nous avons notamment augmenter la luminosité de 50% pour tester la manipulation.
     
 
-<<<<<<< HEAD
-### 32 Implémentation séquentielle en C
-=======
 ### 3.2 Implémentation séquentielle en C
->>>>>>> 14187c0b08ebc9f7a950f2a404845718d471d3f1
 
 L'implémentation séquentielle consiste à :
 
@@ -46,14 +33,10 @@ L'implémentation séquentielle consiste à :
     
 -   Sauvegarder l'image filtrée.
     
--   Vérifier le bon fonctionnement sur une image bruitée.
+-   Vérifier le bon fonctionnement sur une image .
     
 
-<<<<<<< HEAD
-### 33 Portage vers CUDA
-=======
 ### 3.3 Portage vers CUDA
->>>>>>> 14187c0b08ebc9f7a950f2a404845718d471d3f1
 
 Le portage du code sur CUDA implique plusieurs défis techniques, notamment :
 
@@ -129,7 +112,7 @@ dim3 gridSize((width + blockSize.x - 1) / blockSize.x, (height + blockSize.y - 1
 bilateral_filter_kernel<<<gridSize, blockSize>>>(d_src, d_dst, width, height, channels, d, sigma_color, sigma_space);
 cudaDeviceSynchronize();
 ```
-Dans cette approche, un seul noyau est utilisé pour effectuer à la fois le calcul des poids spatiaux et l'application du filtre bilatéral.
+Dans cette approche, un seul noyau est utilisé pour effectuer à la fois le calcul des poids spatiaux et l'application du filtre bilatéral, c'est ce qui est notamment fait dans le le dossier `GPU_1kernel`.
 
 **Limite de la parallélisation**
 La taille du noyau est limité par le nombre de threads que l'on peut utiliser.  
@@ -143,8 +126,11 @@ Nous avons comparé les performances de l'implémentation séquentielle en C et 
 | **C Séquentiel** | **0.42**             |
 | **CUDA**        | **0.16**             |
 
+
 L’implémentation CUDA **divise le temps d'exécution par 2,6** par rapport à l’exécution séquentielle.
 Une certaine variabilité a été observé dans les résultats obtenus par le GPU, elle ne semble pas être lié à la taille du bloc. Le temps pourrait être due en partie à l'utilisation de la librairie chronos sur code_cuda.cu
+
+Concernant l’implémentation `GPU_1kernel`, son temps d'exécution est extrêmement faible, réduisant le temps d’exécution d’un facteur proche de 50. Toutefois, n’ayant pas encore pleinement analysé ce comportement, nous ne l’avons pas intégré au tableau.
 ## 5. Améliorations possibles  
 
 Bien que l'implémentation CUDA soit déjà optimisée, plusieurs pistes d'amélioration peuvent être explorées :  
