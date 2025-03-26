@@ -9,6 +9,7 @@ Le filtrage bilatéral est une technique avancée de traitement d'image qui perm
 
 Les filtres classiques de lissage, bien qu'efficaces pour réduire le bruit, ont pour inconvénient d'altérer les contours et les détails fins des images. Le filtre bilatéral résout ce problème en prenant en compte non seulement la distance spatiale entre les pixels, mais aussi la différence d'intensité entre eux. Cette approche permet de préserver les bords tout en réduisant le bruit de l'image.
 
+<<<<<<< HEAD
 ## 3 Implémentation
 
 ### 31 Structure des fichiers
@@ -18,6 +19,11 @@ Les filtres classiques de lissage, bien qu'efficaces pour réduire le bruit, ont
 -   `GPU_1kernel` : Répertoire contenant l'implémentation GPU utilisant 1 kernel.
 
 -   `GPU_2kernel` : Répertoire contenant l'implémentation CPU utilisant 2 kernels.
+=======
+## 3. Implémentation
+
+### 3.1 Structure des fichiers
+>>>>>>> 14187c0b08ebc9f7a950f2a404845718d471d3f1
 
 -   `code.c` : Implémentation séquentielle du filtre bilatéral en C.
     
@@ -26,7 +32,11 @@ Les filtres classiques de lissage, bien qu'efficaces pour réduire le bruit, ont
 -   `lena_grey.bmp` : Image d'entrée en niveaux de gris utilisée pour le traitement.
     
 
+<<<<<<< HEAD
 ### 32 Implémentation séquentielle en C
+=======
+### 3.2 Implémentation séquentielle en C
+>>>>>>> 14187c0b08ebc9f7a950f2a404845718d471d3f1
 
 L'implémentation séquentielle consiste à :
 
@@ -39,7 +49,11 @@ L'implémentation séquentielle consiste à :
 -   Vérifier le bon fonctionnement sur une image bruitée.
     
 
+<<<<<<< HEAD
 ### 33 Portage vers CUDA
+=======
+### 3.3 Portage vers CUDA
+>>>>>>> 14187c0b08ebc9f7a950f2a404845718d471d3f1
 
 Le portage du code sur CUDA implique plusieurs défis techniques, notamment :
 
@@ -120,7 +134,7 @@ Dans cette approche, un seul noyau est utilisé pour effectuer à la fois le cal
 **Limite de la parallélisation**
 La taille du noyau est limité par le nombre de threads que l'on peut utiliser.  
 Sur un GPU A100 du finisterrae, le nombre de threads maximum est de 1024, ce qui signifie que la taille maximale d'un bloc 2d est de 32x32.
-## 5. Analyse des performances  
+## 4. Analyse des performances  
 
 Nous avons comparé les performances de l'implémentation séquentielle en C et de l'implémentation parallèle avec CUDA utilisant 2 kernels.
 
@@ -131,18 +145,11 @@ Nous avons comparé les performances de l'implémentation séquentielle en C et 
 
 L’implémentation CUDA **divise le temps d'exécution par 2,6** par rapport à l’exécution séquentielle.
 Une certaine variabilité a été observé dans les résultats obtenus par le GPU, elle ne semble pas être lié à la taille du bloc. Le temps pourrait être due en partie à l'utilisation de la librairie chronos sur code_cuda.cu
+## 5. Améliorations possibles  
 
-## 6. Améliorations possibles
+Bien que l'implémentation CUDA soit déjà optimisée, plusieurs pistes d'amélioration peuvent être explorées :  
 
-Bien que l'implémentation CUDA soit déjà optimisée, plusieurs améliorations peuvent encore être envisagées :
+- **Kernel pour les poids de l'image** : Étant donné que le voisinage est une matrice de taille 5x5, son impact sur la parallélisation pourrait être limité. Cette optimisation pourrait s'avérer contre-productive.  
+- **Ajustement des tailles de blocs** : Tester différentes configurations pour optimiser l'occupation des multiprocesseurs et maximiser les performances.  
 
--   **Utilisation accrue de la mémoire partagée** : Réduire les accès à la mémoire globale en stockant localement les valeurs dans chaque bloc.
-    
--   **Optimisation des boucles** : Paralléliser davantage les calculs internes pour réduire la charge de travail de chaque thread.
-    
--   **Utilisation de textures CUDA** : Exploiter la mémoire texture pour des accès plus rapides aux données.
-    
--   **Optimisation des tailles de blocs** : Tester différentes tailles de blocs pour maximiser l'occupation des multiprocesseurs.
-    
-
-Ces améliorations pourraient permettre d'améliorer encore les performances et de réduire le temps de calcul global du filtre bilatéral en CUDA.
+Ces optimisations pourraient encore améliorer les performances du filtre bilatéral en CUDA en réduisant le temps de calcul global.
