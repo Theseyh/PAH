@@ -125,18 +125,13 @@ Nous avons comparé les performances de l'implémentation séquentielle en C et 
 
 L’implémentation CUDA **divise le temps d'exécution par 2,6** par rapport à l’exécution séquentielle.
 Une certaine variabilité a été observé dans les résultats obtenus par le GPU, elle ne semble pas être lié à la taille du bloc. Le temps pourrait être due en partie à l'utilisation de la librairie chronos sur code_cuda.cu
+### 6. Améliorations possibles  
 
-## 6. Améliorations possibles
+Bien que l'implémentation CUDA soit déjà optimisée, plusieurs pistes d'amélioration peuvent être explorées :  
 
-Bien que l'implémentation CUDA soit déjà optimisée, plusieurs améliorations peuvent encore être envisagées :
+- **Kernel pour les poids de l'image** : Étant donné que le voisinage est une matrice de taille 5x5, son impact sur la parallélisation pourrait être limité. Cette optimisation pourrait s'avérer contre-productive.  
+- **Optimisation des boucles** : Accroître la parallélisation des calculs internes afin de mieux répartir la charge de travail entre les threads.  
+- **Utilisation de textures CUDA** : Exploiter la mémoire texture pour accélérer l'accès aux données et améliorer l'efficacité du cache.  
+- **Ajustement des tailles de blocs** : Tester différentes configurations pour optimiser l'occupation des multiprocesseurs et maximiser les performances.  
 
--   **Utilisation accrue de la mémoire partagée** : Réduire les accès à la mémoire globale en stockant localement les valeurs dans chaque bloc.
-    
--   **Optimisation des boucles** : Paralléliser davantage les calculs internes pour réduire la charge de travail de chaque thread.
-    
--   **Utilisation de textures CUDA** : Exploiter la mémoire texture pour des accès plus rapides aux données.
-    
--   **Optimisation des tailles de blocs** : Tester différentes tailles de blocs pour maximiser l'occupation des multiprocesseurs.
-    
-
-Ces améliorations pourraient permettre d'améliorer encore les performances et de réduire le temps de calcul global du filtre bilatéral en CUDA.
+Ces optimisations pourraient encore améliorer les performances du filtre bilatéral en CUDA en réduisant le temps de calcul global.
