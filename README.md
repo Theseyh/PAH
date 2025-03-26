@@ -125,7 +125,7 @@ Nous avons comparé les performances de l'implémentation séquentielle en C et 
 
 L’implémentation CUDA **divise le temps d'exécution par 2,6** par rapport à l’exécution séquentielle.
 Une certaine variabilité a été observé dans les résultats obtenus par le GPU, elle ne semble pas être lié à la taille du bloc. Le temps pourrait être due en partie à l'utilisation de la librairie chronos sur code_cuda.cu
-### 5. Améliorations possibles  
+## 5. Améliorations possibles  
 
 Bien que l'implémentation CUDA soit déjà optimisée, plusieurs pistes d'amélioration peuvent être explorées :  
 
