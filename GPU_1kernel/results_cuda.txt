@@ -1,7 +1,0 @@
-Résultats des exécutions de code_cuda.cu
--------------------------------------
-BLOCK_SIZE=1, Time: 0.17
-BLOCK_SIZE=4, Time: 0.18
-BLOCK_SIZE=8, Time: 0.16
-BLOCK_SIZE=16, Time: 0.16
-BLOCK_SIZE=32, Time: 0.18
