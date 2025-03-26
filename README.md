@@ -124,7 +124,7 @@ Nous avons comparé les performances de l'implémentation séquentielle en C et 
 | Implémentation   | Temps d'exécution (s) |
 |-----------------|----------------------|
 | **C Séquentiel** | **0.42**             |
-| **CUDA**        | **0.16**             |
+| **CUDA GPU_2kernel**        | **0.16**             |
 
 
 L’implémentation CUDA **divise le temps d'exécution par 2,6** par rapport à l’exécution séquentielle.
