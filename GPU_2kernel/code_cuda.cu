@@ -75,8 +75,8 @@ void bilateral_filter(unsigned char *src, unsigned char *dst, int width, int hei
     double *d_spatial_weights;
     cudaMalloc(&d_spatial_weights, d * d * sizeof(double));
 
-    dim3 blockSize2D(block_size, block_size);
-    dim3 gridSize((d + blockSize2D.x - 1) / blockSize2D.x, (d + blockSize2D.y - 1) / blockSize2D.y);
+    dim3 blockSize2D(d, d); //5x5
+    dim3 gridSize((d + blockSize2D.x - 1) / blockSize2D.x, (d + blockSize2D.y - 1) / blockSize2D.y); //1x1
 
     calculate_spatial_weights<<<gridSize, blockSize2D>>>(d_spatial_weights, d, sigma_space);
     cudaDeviceSynchronize();
@@ -150,9 +150,10 @@ int main(int argc, char *argv[]) {
     auto start = std::chrono::high_resolution_clock::now();
     bilateral_filter(image, filtered_image, width, height, channels, 5, 75.0, 75.0, block_size);
     auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> duration = end - start;
-    printf("Temps total (CPU + GPU) : %.2f ms\n", duration.count());
-
+    std::chrono::duration<double> duration = end - start;
+    printf("Temps total (CPU + GPU) : %.3f secondes\n", duration.count());
+    
+    
     if (!stbi_write_png(argv[2], width, height, channels, filtered_image, width * channels)) {
         printf("Error saving the image!\n");
         free(filtered_image);

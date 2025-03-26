@@ -124,35 +124,12 @@ int main(int argc, char *argv[]) {
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
-    // Démarrer le timer global (mesure CPU + GPU)
-    auto start_cpu = std::chrono::high_resolution_clock::now();
-
-    // Démarrer le timer CUDA (uniquement pour le kernel)
-    cudaEventRecord(start, 0);
-
     // Lancer le kernel
+    auto start = std::chrono::high_resolution_clock::now();
     bilateral_filter_kernel<<<grid_size, block_size>>>(d_src, d_dst, width, height, channels, 5, 75.0, 75.0);
-
-    // Synchronisation et arrêt du timer CUDA
-    cudaEventRecord(stop, 0);
-    cudaEventSynchronize(stop);
-    cudaEventElapsedTime(&elapsedTime, start, stop);
-
-    // Arrêter le timer global (CPU + GPU)
-    auto end_cpu = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> duration = end_cpu - start_cpu;
-
-    // Afficher les temps d'exécution
-    printf("Temps d'exécution du kernel : %.2f ms\n", elapsedTime);
-    printf("Temps total (CPU + GPU) : %.2f ms\n", duration.count());
-
-    // Nettoyage des événements
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
-
-    cudaDeviceSynchronize();
-
-    cudaMemcpy(filtered_image, d_dst, img_size, cudaMemcpyDeviceToHost);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = end - start;
+    printf("Temps total (CPU + GPU) : %.3f secondes\n", duration.count());
 
     // Save the output image
     if (!stbi_write_png(argv[2], width, height, channels, filtered_image, width * channels)) {
